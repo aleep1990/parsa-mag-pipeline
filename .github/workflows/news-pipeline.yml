@@ -32,7 +32,6 @@ jobs:
       # scripts/summarize.py also exits 0 on its own when the key is
       # absent, so a missing secret never fails the run.
       - name: Summarize with Gemini (skipped without secret)
-        if: ${{ secrets.GEMINI_API_KEY != '' }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python3 scripts/summarize.py
