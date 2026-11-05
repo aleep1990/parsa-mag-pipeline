@@ -1,0 +1,50 @@
+name: News pipeline (drafts only)
+
+# Fallback pipeline for Parsa Mag. Runs on GitHub's own scheduler only —
+# no Muse agent cron is involved. This workflow ONLY stores drafts in this
+# repo. It never publishes to the site and never posts to Telegram.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # every 30 minutes (UTC)
+  workflow_dispatch:  # manual runs from the Actions tab
+
+permissions:
+  contents: write  # so the workflow can commit drafts back to this repo
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch RSS
+        run: python3 scripts/fetch_rss.py
+
+      - name: Dedupe and rank
+        run: python3 scripts/dedupe_rank.py
+
+      # Runs only when the GEMINI_API_KEY repository secret exists.
+      # scripts/summarize.py also exits 0 on its own when the key is
+      # absent, so a missing secret never fails the run.
+      - name: Summarize with Gemini (skipped without secret)
+        if: ${{ secrets.GEMINI_API_KEY != '' }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 scripts/summarize.py
+
+      - name: Commit drafts
+        # Commit staged changes if any, then always push: this also
+        # recovers a commit stranded by an earlier failed push (a plain
+        # "no changes" check would otherwise report "No new drafts"
+        # forever while the commit sits unpushed).
+        run: |
+          git config user.name "parsa-mag-pipeline"
+          git config user.email "pipeline@local"
+          git add drafts state/seen.json
+          if git diff --cached --quiet; then echo "No new drafts"; else git commit -m "News drafts: $(date -u +%Y-%m-%dT%H:%M:%SZ)"; fi
+          git push
