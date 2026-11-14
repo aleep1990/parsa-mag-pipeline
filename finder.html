@@ -109,6 +109,7 @@ var probSel=document.getElementById('prob');
 Object.keys(DATA.tariff).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=DATA.tariff[k].label;probSel.appendChild(o);});
 probSel.value='root';
 var LIVE_MAP={'root':'root_canal','implant':'implant','cleaning':'scaling','composite':'composite','laminate':'laminate','ortho-full':'ortho','ortho-limited':'ortho','bleach':'bleaching','crown-zir':'crown','crown-pfm':'crown','extract':'extraction','wisdom':'extraction','kids':'kids','denture':'denture','partial':'denture'};
+function scrollToOut(){var o=document.getElementById('out');if(o&&o.scrollIntoView)o.scrollIntoView({behavior:'smooth',block:'start'});}
 function run(){
   var pk=probSel.value, t=DATA.tariff[pk];
   var b=document.getElementById('budget').value.split('-').map(Number);
@@ -116,6 +117,8 @@ function run(){
   var sort=document.getElementById('sort').value;
   var onlyR=document.getElementById('onlyrated').checked;
   var onlyH=document.getElementById('h24').checked;
+  var d=new Date();
+  var ts=fa(d.getHours()+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2));
   var list=[];
   DATA.centers.forEach(function(c){
     if(c.dist>rad)return;
@@ -141,8 +144,8 @@ function run(){
   var lk=LIVE_MAP[pk];
   var lo=lk&&DATA.live&&DATA.live.doctoreto&&DATA.live.doctoreto.offers&&DATA.live.doctoreto.offers[lk];
   if(lo){html+='<div class="est live">🟢 <b>قیمت بازار زنده</b> (دکترتو، '+fa(DATA.live.generated_jalali)+'): کمترین <b>'+money(lo.min)+'</b> — میانه <b>'+money(lo.median)+'</b> از '+fa(lo.count)+' آگهی. ارزان‌ترین: <a href="'+lo.cheapest.url+'">'+lo.cheapest.name+' — '+lo.cheapest.doctor+(lo.cheapest.place?'، '+lo.cheapest.place:'')+'</a></div>';}
-  if(!list.length){out.innerHTML=html+'<div class="empty">با این فیلترها مرکزی پیدا نشد — شعاع را بیشتر کنید یا بودجه را بالاتر ببرید.</div>';return;}
-  html+='<h2 class="sec">پیشنهاد برای شما ('+fa(list.length)+' مرکز)</h2><div class="cards">';
+  if(!list.length){out.innerHTML=html+'<div class="empty">با این فیلترها مرکزی پیدا نشد — شعاع را بیشتر کنید یا بودجه را بالاتر ببرید.</div><p class="note">⏱ این جست‌وجو در ساعت '+ts+' انجام شد.</p>';scrollToOut();return;}
+  html+='<h2 class="sec">پیشنهاد برای شما ('+fa(list.length)+' مرکز)</h2><p class="note">⏱ این نتایج در ساعت '+ts+' به‌روز شد.</p><div class="cards">';
   list.slice(0,15).forEach(function(it,i){
     var c=it.c;
     var why=[];
@@ -166,6 +169,7 @@ function run(){
   });
   html+='</div><p class="note">نمایش ۱۵ مرکز اول از '+fa(list.length)+' مرکز واجد شرایط. برای همهٔ مراکز و جستجو به <a href="tehran.html">راهنمای کامل تهران</a> بروید.</p>';
   out.innerHTML=html;
+  scrollToOut();
 }
 run();
 </script>
